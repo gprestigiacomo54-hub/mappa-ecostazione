@@ -122,7 +122,7 @@
                     L.latLng(lat, lng),
                     L.latLng(destLat, destLng)
                 ]);
-                map.fitBounds(initialBounds, { padding: [50, 50] });
+                map.fitBounds(initialBounds, { padding: [30, 30] });
 
                 if (showRoute) {
                     var valhallaUrl = 'https://openstreetmap.de' +
@@ -169,7 +169,7 @@
                                 banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
                                 banner.style.display = 'block';
 
-                                map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                                map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
                             }
                         })
                         .catch(function(err) {
