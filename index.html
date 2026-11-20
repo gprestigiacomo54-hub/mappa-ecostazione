@@ -114,7 +114,7 @@
                     lng + ',' + lat + ';' + destLng + ',' + destLat +
                     '?overview=full&geometries=geojson';
 
-                fetch(osrmUrl)
+                              fetch(osrmUrl)
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
                         if (data.routes && data.routes.length > 0) {
@@ -137,6 +137,7 @@
                             map.fitBounds(fallback.getBounds());
                         }
                     })
+
                     .catch(function() {
                         var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
                             color: routeColor, weight: 4, dashArray: '8, 8'
