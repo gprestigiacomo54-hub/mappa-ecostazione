@@ -110,40 +110,62 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                var osrmUrl = 'https://project-osrm.org' +
-                    lng + ',' + lat + ';' + destLng + ',' + destLat +
-                    '?overview=full&geometries=geojson';
+                               var valhallaUrl = 'https://openstreetmap.de' +
+                    encodeURIComponent(JSON.stringify({
+                        locations: [
+                            { lat: lat, lon: lng },
+                            { lat: destLat, lon: destLng }
+                        ],
+                        costing: 'auto',
+                        directions_options: { units: 'kilometers' }
+                    }));
 
-                              fetch(osrmUrl)
+                function decodePolyline6(str) {
+                    var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
+                    while (index < str.length) {
+                        byte = null; shift = 0; result = 0;
+                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+                        latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                        shift = result = 0;
+                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+                        longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                        lat += latitude_change;
+                        lng += longitude_change;
+                        coordinates.push(L.latLng(lat / factor, lng / factor));
+                    }
+                    return coordinates;
+                }
+
+                fetch(valhallaUrl)
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
-                        if (data.routes && data.routes.length > 0) {
-                            var route = data.routes.at(0);
-                            var routeLine = L.geoJSON(route.geometry, {
-                                style: { color: routeColor, weight: 6, opacity: 0.85 }
+                        if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
+                            var leg = data.trip.legs.at(0);
+                            var routeCoords = decodePolyline6(leg.shape);
+                            var routeLine = L.polyline(routeCoords, {
+                                color: routeColor,
+                                weight: 6,
+                                opacity: 0.85
                             }).addTo(map);
 
-                            var km = (route.distance / 1000).toFixed(1).replace('.', ',');
-                            var min = Math.max(1, Math.round(route.duration / 60));
+                            var km = data.trip.summary.length.toFixed(1).replace('.', ',');
+                            var min = Math.max(1, Math.round(data.trip.summary.time / 60));
                             var banner = document.getElementById('route-banner');
                             banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
                             banner.style.display = 'block';
 
                             map.fitBounds(routeLine.getBounds());
                         } else {
-                            var fallback = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
-                                color: routeColor, weight: 4, dashArray: '8, 8'
-                            }).addTo(map);
-                            map.fitBounds(fallback.getBounds());
+                            throw new Error('Nessun percorso');
                         }
                     })
-
                     .catch(function() {
                         var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
                             color: routeColor, weight: 4, dashArray: '8, 8'
                         }).addTo(map);
                         map.fitBounds(line.getBounds());
                     });
+
             }
         };
     </script>
