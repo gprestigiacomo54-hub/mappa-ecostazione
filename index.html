@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mappa EcoStazione</title>
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://jsdelivr.net" />
     <style>
         html, body, #map {
             height: 100vh;
@@ -12,21 +12,21 @@
             margin: 0;
             padding: 0;
             background-color: #e5e3df;
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
         }
         #route-banner {
             display: none;
             position: fixed;
-            top: 12px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            background: #ffffff;
-            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 6px 14px;
             border-radius: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #1a1a1a;
             white-space: nowrap;
@@ -54,12 +54,12 @@
     <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://jsdelivr.net"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
-            var lat = parseFloat(params.get('lat')) || 41.9028;
-            var lng = parseFloat(params.get('lng')) || 12.4964;
+            var lat = parseFloat(params.get('lat')) || 38.0965;
+            var lng = parseFloat(params.get('lng')) || 13.4685;
             var raggioKm = parseFloat(params.get('raggio')) || 5.0;
             var destLat = parseFloat(params.get('destLat')) || 0;
             var destLng = parseFloat(params.get('destLng')) || 0;
@@ -96,11 +96,12 @@
             var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
             centerMarker.bindPopup('<b>La tua posizione</b>');
 
+            // Cerchio turchese trasparente che rimane sempre visibile
             var searchCircle = L.circle(L.latLng(lat, lng), {
-                color: '#FF4500',
-                fillColor: '#FF4500',
-                fillOpacity: hasDest ? 0.08 : 0.20,
-                weight: hasDest ? 1.5 : 3
+                color: '#00ACC1',
+                fillColor: '#00ACC1',
+                fillOpacity: 0.16,
+                weight: 2
             }).setRadius(raggioMetri).addTo(map);
 
             if (!hasDest) {
@@ -110,7 +111,7 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                               var valhallaUrl = 'https://openstreetmap.de' +
+                var valhallaUrl = 'https://openstreetmap.de' +
                     encodeURIComponent(JSON.stringify({
                         locations: [
                             { lat: lat, lon: lng },
@@ -140,7 +141,7 @@
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
                         if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                            var leg = data.trip.legs.at(0);
+                            var leg = data.trip.legs;
                             var routeCoords = decodePolyline6(leg.shape);
                             var routeLine = L.polyline(routeCoords, {
                                 color: routeColor,
@@ -151,21 +152,20 @@
                             var km = data.trip.summary.length.toFixed(1).replace('.', ',');
                             var min = Math.max(1, Math.round(data.trip.summary.time / 60));
                             var banner = document.getElementById('route-banner');
+                            banner.style.borderLeft = '5px solid ' + routeColor;
                             banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
                             banner.style.display = 'block';
 
-                            map.fitBounds(routeLine.getBounds());
+                            map.fitBounds(routeLine.getBounds(), { padding: });
                         } else {
-                            throw new Error('Nessun percorso');
+                            throw new Error('Percorso non trovato');
                         }
                     })
                     .catch(function() {
-                        var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
-                            color: routeColor, weight: 4, dashArray: '8, 8'
-                        }).addTo(map);
-                        map.fitBounds(line.getBounds());
+                        // Nessuna linea tratteggiata: inquadra solo utente e destinazione
+                        var bounds = L.latLngBounds([L.latLng(lat, lng), L.latLng(destLat, destLng)]);
+                        map.fitBounds(bounds, { padding: });
                     });
-
             }
         };
     </script>
