@@ -96,7 +96,6 @@
             var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
             centerMarker.bindPopup('<b>La tua posizione</b>');
 
-            // Cerchio turchese trasparente che rimane sempre visibile
             var searchCircle = L.circle(L.latLng(lat, lng), {
                 color: '#00ACC1',
                 fillColor: '#00ACC1',
@@ -111,18 +110,20 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
+                var locationsList = new Array(
+                    { lat: lat, lon: lng },
+                    { lat: destLat, lon: destLng }
+                );
+
                 var valhallaUrl = 'https://openstreetmap.de' +
                     encodeURIComponent(JSON.stringify({
-                        locations: [
-                            { lat: lat, lon: lng },
-                            { lat: destLat, lon: destLng }
-                        ],
+                        locations: locationsList,
                         costing: 'auto',
                         directions_options: { units: 'kilometers' }
                     }));
 
                 function decodePolyline6(str) {
-                    var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
+                    var index = 0, lat = 0, lng = 0, coordinates = new Array(), shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
                     while (index < str.length) {
                         byte = null; shift = 0; result = 0;
                         do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
@@ -141,7 +142,7 @@
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
                         if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                            var leg = data.trip.legs;
+                            var leg = data.trip.legs.at(0);
                             var routeCoords = decodePolyline6(leg.shape);
                             var routeLine = L.polyline(routeCoords, {
                                 color: routeColor,
@@ -156,15 +157,14 @@
                             banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
                             banner.style.display = 'block';
 
-                            map.fitBounds(routeLine.getBounds(), { padding: });
+                            map.fitBounds(routeLine.getBounds(), { padding: L.point(40, 40) });
                         } else {
                             throw new Error('Percorso non trovato');
                         }
                     })
                     .catch(function() {
-                        // Nessuna linea tratteggiata: inquadra solo utente e destinazione
-                        var bounds = L.latLngBounds([L.latLng(lat, lng), L.latLng(destLat, destLng)]);
-                        map.fitBounds(bounds, { padding: });
+                        var bounds = L.latLngBounds(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)));
+                        map.fitBounds(bounds, { padding: L.point(40, 40) });
                     });
             }
         };
