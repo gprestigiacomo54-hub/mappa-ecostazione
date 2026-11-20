@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mappa EcoStazione</title>
-   <link rel="stylesheet" href="https://jsdelivr.net" />
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         html, body, #map {
             height: 100vh;
@@ -54,7 +54,7 @@
     <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
@@ -94,21 +94,23 @@
             });
 
             var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
+            centerMarker.bindPopup('<b>La tua posizione</b>');
 
             var searchCircle = L.circle(L.latLng(lat, lng), {
                 color: '#00ACC1',
                 fillColor: '#00ACC1',
-                fillOpacity: 0.20,
-                weight: 2.5
+                fillOpacity: hasDest ? 0.08 : 0.20,
+                weight: hasDest ? 1.5 : 3
             }).setRadius(raggioMetri).addTo(map);
 
             if (!hasDest) {
+                centerMarker.openPopup();
                 map.fitBounds(searchCircle.getBounds());
             } else {
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                var valhallaUrl = 'https://openstreetmap.de' +
+                               var valhallaUrl = 'https://openstreetmap.de' +
                     encodeURIComponent(JSON.stringify({
                         locations: [
                             { lat: lat, lon: lng },
@@ -158,9 +160,12 @@
                         }
                     })
                     .catch(function() {
-                        var bounds = L.latLngBounds(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)));
-                        map.fitBounds(bounds);
+                        var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
+                            color: routeColor, weight: 4, dashArray: '8, 8'
+                        }).addTo(map);
+                        map.fitBounds(line.getBounds());
                     });
+
             }
         };
     </script>
