@@ -64,7 +64,7 @@
     <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://cloudflare.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
@@ -124,7 +124,7 @@
                 map.fitBounds(boundsLine.getBounds());
 
                 if (showRoute) {
-                    var valhallaUrl = 'https://openstreetmap.de' +
+                    var valhallaUrl = 'https://valhalla1.openstreetmap.de/route?json=' +
                         encodeURIComponent(JSON.stringify({
                             locations: new Array(
                                 { lat: lat, lon: lng },
