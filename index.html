@@ -90,8 +90,7 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                var bounds = searchCircle.getBounds();
-                bounds.extend(L.latLng(destLat, destLng));
+                var bounds = L.latLngBounds(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)));
                 map.fitBounds(bounds);
             }
         };
