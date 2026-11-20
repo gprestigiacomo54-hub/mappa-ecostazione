@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mappa EcoStazione</title>
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://jsdelivr.net" />
     <style>
         html, body, #map {
             height: 100vh;
@@ -14,22 +14,6 @@
             background-color: #e5e3df;
             font-family: sans-serif;
             overflow: hidden;
-        }
-        #route-banner {
-            display: none;
-            position: fixed;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: #ffffff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-            font-size: 14px;
-            font-weight: bold;
-            color: #1a1a1a;
-            white-space: nowrap;
         }
         .user-pin {
             width: 18px;
@@ -51,10 +35,9 @@
     </style>
 </head>
 <body>
-    <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://jsdelivr.net"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
@@ -64,7 +47,6 @@
             var destLat = parseFloat(params.get('destLat')) || 0;
             var destLng = parseFloat(params.get('destLng')) || 0;
             var destName = params.get('destName') || 'Stazione selezionata';
-            var routeColor = params.get('color') || '#1E88E5';
 
             var hasDest = (destLat !== 0 || destLng !== 0);
             var raggioMetri = raggioKm * 1000;
@@ -93,83 +75,24 @@
                 popupAnchor: L.point(0, -28)
             });
 
-            var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
-            
+            L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
+
             var searchCircle = L.circle(L.latLng(lat, lng), {
                 color: '#00ACC1',
                 fillColor: '#00ACC1',
-                fillOpacity: hasDest ? 0.08 : 0.20,
-                weight: hasDest ? 1.5 : 2.5
+                fillOpacity: 0.20,
+                weight: 2.5
             }).setRadius(raggioMetri).addTo(map);
 
             if (!hasDest) {
-    centerMarker.openPopup();
-    map.fitBounds(searchCircle.getBounds());
-} else {
-    var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
-    destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
+                map.fitBounds(searchCircle.getBounds());
+            } else {
+                var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
+                destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-    var bounds = searchCircle.getBounds();
-    bounds.extend(L.latLng(destLat, destLng));
-    map.fitBounds(bounds);
-}
-
-           var valhallaUrl = 'https://openstreetmap.de' +
-                    encodeURIComponent(JSON.stringify({
-                        locations: [
-                            { lat: lat, lon: lng },
-                            { lat: destLat, lon: destLng }
-                        ],
-                        costing: 'auto',
-                        directions_options: { units: 'kilometers' }
-                    }));
-
-                function decodePolyline6(str) {
-                    var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
-                    while (index < str.length) {
-                        byte = null; shift = 0; result = 0;
-                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
-                        latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                        shift = result = 0;
-                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
-                        longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                        lat += latitude_change;
-                        lng += longitude_change;
-                        coordinates.push(L.latLng(lat / factor, lng / factor));
-                    }
-                    return coordinates;
-                }
-
-                fetch(valhallaUrl)
-                    .then(function(res) { return res.json(); })
-                    .then(function(data) {
-                        if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                            var leg = data.trip.legs.at(0);
-                            var routeCoords = decodePolyline6(leg.shape);
-                            var routeLine = L.polyline(routeCoords, {
-                                color: routeColor,
-                                weight: 6,
-                                opacity: 0.85
-                            }).addTo(map);
-
-                            var km = data.trip.summary.length.toFixed(1).replace('.', ',');
-                            var min = Math.max(1, Math.round(data.trip.summary.time / 60));
-                            var banner = document.getElementById('route-banner');
-                            banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
-                            banner.style.display = 'block';
-
-                            map.fitBounds(routeLine.getBounds());
-                        } else {
-                            throw new Error('Nessun percorso');
-                        }
-                    })
-                    .catch(function() {
-                        var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
-                            color: routeColor, weight: 4, dashArray: '8, 8'
-                        }).addTo(map);
-                        map.fitBounds(line.getBounds());
-                    });
-
+                var bounds = searchCircle.getBounds();
+                bounds.extend(L.latLng(destLat, destLng));
+                map.fitBounds(bounds);
             }
         };
     </script>
