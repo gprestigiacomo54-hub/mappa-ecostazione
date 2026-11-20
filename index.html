@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mappa EcoStazione</title>
-    <link rel="stylesheet" href="https://jsdelivr.net" />
+    <link rel="stylesheet" href="https://cloudflare.com" />
     <style>
         html, body, #map {
             height: 100vh;
@@ -64,7 +64,7 @@
     <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cloudflare.com"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
@@ -118,25 +118,24 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                var initialBounds = L.latLngBounds([
-                    L.latLng(lat, lng),
-                    L.latLng(destLat, destLng)
-                ]);
-                map.fitBounds(initialBounds, { padding: [30, 30] });
+                var boundsLine = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
+                    weight: 0
+                }).addTo(map);
+                map.fitBounds(boundsLine.getBounds());
 
                 if (showRoute) {
                     var valhallaUrl = 'https://openstreetmap.de' +
                         encodeURIComponent(JSON.stringify({
-                            locations: [
+                            locations: new Array(
                                 { lat: lat, lon: lng },
                                 { lat: destLat, lon: destLng }
-                            ],
+                            ),
                             costing: 'auto',
                             directions_options: { units: 'kilometers' }
                         }));
 
                     function decodePolyline6(str) {
-                        var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
+                        var index = 0, lat = 0, lng = 0, coordinates = new Array(), shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
                         while (index < str.length) {
                             byte = null; shift = 0; result = 0;
                             do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
@@ -155,7 +154,7 @@
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
                             if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                                var leg = data.trip.legs[0];
+                                var leg = data.trip.legs.at(0);
                                 var routeCoords = decodePolyline6(leg.shape);
                                 var routeLine = L.polyline(routeCoords, {
                                     color: routeColor,
@@ -169,11 +168,11 @@
                                 banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
                                 banner.style.display = 'block';
 
-                                map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+                                map.fitBounds(routeLine.getBounds());
                             }
                         })
                         .catch(function(err) {
-                            console.error('Errore routing Valhalla:', err);
+                            console.error('Errore Valhalla:', err);
                         });
                 }
             }
