@@ -158,7 +158,7 @@
                     })
                     .catch(function() {
                         var line = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
-                            color: routeColor, weight: 4, dashArray: '8, 8'
+                            color: routeColor, weight: 0, dashArray: '8, 8'
                         }).addTo(map);
                         map.fitBounds(line.getBounds());
                     });
