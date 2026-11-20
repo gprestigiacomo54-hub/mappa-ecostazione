@@ -94,8 +94,7 @@
             });
 
             var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
-            centerMarker.bindPopup('<b>La tua posizione</b>');
-
+            
             var searchCircle = L.circle(L.latLng(lat, lng), {
                 color: '#00ACC1',
                 fillColor: '#00ACC1',
@@ -104,13 +103,18 @@
             }).setRadius(raggioMetri).addTo(map);
 
             if (!hasDest) {
-                centerMarker.openPopup();
-                map.fitBounds(searchCircle.getBounds());
-            } else {
-                var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
-                destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
+    centerMarker.openPopup();
+    map.fitBounds(searchCircle.getBounds());
+} else {
+    var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
+    destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                               var valhallaUrl = 'https://openstreetmap.de' +
+    var bounds = searchCircle.getBounds();
+    bounds.extend(L.latLng(destLat, destLng));
+    map.fitBounds(bounds);
+}
+
+           var valhallaUrl = 'https://openstreetmap.de' +
                     encodeURIComponent(JSON.stringify({
                         locations: [
                             { lat: lat, lon: lng },
