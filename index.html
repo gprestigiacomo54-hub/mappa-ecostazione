@@ -39,6 +39,15 @@
             border-radius: 50%;
             box-shadow: 0 0 8px rgba(0,0,0,0.4);
         }
+        .station-pin {
+            width: 14px;
+            height: 14px;
+            background-color: #607D70;
+            border: 2px solid #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+
         .dest-pin {
             width: 24px;
             height: 24px;
@@ -76,6 +85,7 @@
             var destName = params.get('destName') || 'Stazione selezionata';
             var routeColor = params.get('color') || '#1E88E5';
             var showRoute = params.get('route') === '1';
+            var stationsParam = params.get('stations') || '';
 
             var hasDest = (destLat !== 0 || destLng !== 0);
             var raggioMetri = raggioKm * 1000;
@@ -95,6 +105,12 @@
                 iconSize: L.point(24, 24),
                 iconAnchor: L.point(12, 12)
             });
+            var stationIcon = L.divIcon({
+                className: '',
+                html: '<div class="station-pin"></div>',
+                iconSize: L.point(18, 18),
+                iconAnchor: L.point(9, 9)
+            });
 
             var destIcon = L.divIcon({
                 className: '',
@@ -111,6 +127,27 @@
                 fillOpacity: hasDest ? 0.08 : 0.22,
                 weight: hasDest ? 1.5 : 2.5
             }).setRadius(raggioMetri).addTo(map);
+            if (stationsParam.length > 0) {
+                var items = stationsParam.split('|');
+                items.forEach(function(item) {
+                    var parts = item.split(',');
+                    if (parts.length >= 2) {
+                        var sLat = parseFloat(parts.at(0));
+                        var sLng = parseFloat(parts.at(1));
+
+                        var isSameAsDest = hasDest &&
+                            Math.abs(sLat - destLat) < 0.00005 &&
+                            Math.abs(sLng - destLng) < 0.00005;
+
+                        if (!isNaN(sLat) && !isNaN(sLng) && !isSameAsDest) {
+                            L.marker(L.latLng(sLat, sLng), {
+                                icon: stationIcon,
+                                interactive: false
+                            }).addTo(map);
+                        }
+                    }
+                });
+            }
 
             if (!hasDest) {
                 map.fitBounds(searchCircle.getBounds());
@@ -118,10 +155,9 @@
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
                 destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
 
-                var boundsLine = L.polyline(new Array(L.latLng(lat, lng), L.latLng(destLat, destLng)), {
-                    weight: 0
-                }).addTo(map);
-                map.fitBounds(boundsLine.getBounds());
+                var combinedBounds = searchCircle.getBounds().extend(L.latLng(destLat, destLng));
+                map.fitBounds(combinedBounds);
+
 
                 if (showRoute) {
                     var valhallaUrl = 'https://valhalla1.openstreetmap.de/route?json=' +
