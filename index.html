@@ -154,7 +154,7 @@
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
                             if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                                var leg = data.trip.legs.at[0];
+                                var leg = data.trip.legs;
                                 var routeCoords = decodePolyline6(leg.shape);
                                 var routeLine = L.polyline(routeCoords, {
                                     color: routeColor,
