@@ -42,7 +42,7 @@
         .station-pin {
             width: 14px;
             height: 14px;
-            background-color: #607D70;
+            background-color: #8C6464;
             border: 2px solid #FFFFFF;
             border-radius: 50%;
             box-shadow: 0 1px 4px rgba(0,0,0,0.4);
@@ -51,7 +51,7 @@
         .dest-pin {
             width: 24px;
             height: 24px;
-            background-color: #E53935;
+            background-color: #00C853;
             border: 3px solid #FFFFFF;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
@@ -122,10 +122,10 @@
 
             var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
             var searchCircle = L.circle(L.latLng(lat, lng), {
-                color: '#00ACC1',
-                fillColor: '#00ACC1',
-                fillOpacity: hasDest ? 0.08 : 0.22,
-                weight: hasDest ? 1.5 : 2.5
+                color: '#00B8D4',
+                fillColor: '#00E5FF',
+                fillOpacity: hasDest ? 0.14 : 0.28,
+                weight: hasDest ? 2.0 : 3.0
             }).setRadius(raggioMetri).addTo(map);
             if (stationsParam.length > 0) {
                 var items = stationsParam.split('|');
