@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mappa EcoStazione</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cloudflare.com" />
     <style>
         html, body, #map {
             height: 100vh;
@@ -40,8 +40,8 @@
             box-shadow: 0 0 8px rgba(0,0,0,0.4);
         }
         .station-pin {
-            width: 14px;
-            height: 14px;
+            width: 24px;
+            height: 24px;
             background-color: #A5D6A7;
             border: 2px solid #2E7D32;
             border-radius: 50%;
@@ -51,7 +51,6 @@
             justify-content: center;
             box-sizing: border-box;
         }
-
         .dest-pin {
             width: 24px;
             height: 24px;
@@ -61,12 +60,40 @@
             transform: rotate(-45deg);
             box-shadow: 0 2px 6px rgba(0,0,0,0.45);
         }
-        iframe[src*="netlify"],
-        div[id*="netlify"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
+        .conv-pin {
+            width: 24px;
+            height: 24px;
+            background-color: #FF9100;
+            border: 3px solid #FFFFFF;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+        }
+        .price-bubble-eco {
+            background: #00C853 !important;
+            color: #FFFFFF !important;
+            border: 2px solid #FFFFFF !important;
+            border-radius: 12px !important;
+            padding: 3px 8px !important;
+            font-weight: 800 !important;
+            font-size: 13px !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35) !important;
+        }
+        .price-bubble-eco::before {
+            border-top-color: #00C853 !important;
+        }
+        .price-bubble-conv {
+            background: #FF9100 !important;
+            color: #FFFFFF !important;
+            border: 2px solid #FFFFFF !important;
+            border-radius: 12px !important;
+            padding: 3px 8px !important;
+            font-weight: 800 !important;
+            font-size: 13px !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35) !important;
+        }
+        .price-bubble-conv::before {
+            border-top-color: #FF9100 !important;
         }
         .leaflet-control-attribution {
             display: none !important;
@@ -77,7 +104,7 @@
     <div id="route-banner"></div>
     <div id="map"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cloudflare.com"></script>
     <script>
         window.onload = function() {
             var params = new URLSearchParams(window.location.search);
@@ -85,14 +112,23 @@
             var lat = parseFloat(params.get('lat')) || 41.9028;
             var lng = parseFloat(params.get('lng')) || 12.4964;
             var raggioKm = parseFloat(params.get('raggio')) || 5.0;
+
             var destLat = parseFloat(params.get('destLat')) || 0;
             var destLng = parseFloat(params.get('destLng')) || 0;
-            var destName = params.get('destName') || 'Stazione selezionata';
+            var destName = params.get('destName') || 'Più economica';
+            var destPrice = params.get('destPrice') || '';
+
+            var convLat = parseFloat(params.get('convLat')) || 0;
+            var convLng = parseFloat(params.get('convLng')) || 0;
+            var convPrice = params.get('convPrice') || '';
+
             var routeColor = params.get('color') || '#1E88E5';
             var showRoute = params.get('route') === '1';
             var stationsParam = params.get('stations') || '';
 
             var hasDest = (destLat !== 0 || destLng !== 0);
+            var hasConv = (convLat !== 0 || convLng !== 0) &&
+                !(Math.abs(convLat - destLat) < 0.00005 && Math.abs(convLng - destLng) < 0.00005);
             var raggioMetri = raggioKm * 1000;
 
             var map = L.map('map', { zoomControl: false }).setView(L.latLng(lat, lng), 13);
@@ -110,7 +146,8 @@
                 iconSize: L.point(24, 24),
                 iconAnchor: L.point(12, 12)
             });
-                       var stationSvg = (stationType === 'ev')
+
+            var stationSvg = (stationType === 'ev')
                 ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="#1B5E20"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg>'
                 : '<svg viewBox="0 0 24 24" width="14" height="14" fill="#1B5E20"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5z"/></svg>';
 
@@ -129,7 +166,15 @@
                 popupAnchor: L.point(0, -28)
             });
 
-            var centerMarker = L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
+            var convIcon = L.divIcon({
+                className: '',
+                html: '<div class="conv-pin"></div>',
+                iconSize: L.point(30, 30),
+                iconAnchor: L.point(15, 30),
+                popupAnchor: L.point(0, -28)
+            });
+
+            L.marker(L.latLng(lat, lng), { icon: userIcon }).addTo(map);
             var searchCircle = L.circle(L.latLng(lat, lng), {
                 color: '#00B8D4',
                 fillColor: '#00E5FF',
@@ -147,8 +192,11 @@
                         var isSameAsDest = hasDest &&
                             Math.abs(sLat - destLat) < 0.00005 &&
                             Math.abs(sLng - destLng) < 0.00005;
+                        var isSameAsConv = hasConv &&
+                            Math.abs(sLat - convLat) < 0.00005 &&
+                            Math.abs(sLng - convLng) < 0.00005;
 
-                        if (!isNaN(sLat) && !isNaN(sLng) && !isSameAsDest) {
+                        if (!isNaN(sLat) && !isNaN(sLng) && !isSameAsDest && !isSameAsConv) {
                             L.marker(L.latLng(sLat, sLng), {
                                 icon: stationIcon,
                                 interactive: false
@@ -161,15 +209,37 @@
             if (!hasDest) {
                 map.fitBounds(searchCircle.getBounds());
             } else {
-                var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
-                destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
-
                 var combinedBounds = searchCircle.getBounds().extend(L.latLng(destLat, destLng));
-                map.fitBounds(combinedBounds);
 
+                var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon, zIndexOffset: 1000 }).addTo(map);
+                if (destPrice) {
+                    destMarker.bindTooltip(destPrice, {
+                        permanent: true,
+                        direction: 'top',
+                        offset: L.point(0, -30),
+                        className: 'price-bubble-eco'
+                    }).openTooltip();
+                } else {
+                    destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
+                }
+
+                if (hasConv) {
+                    var convMarker = L.marker(L.latLng(convLat, convLng), { icon: convIcon, zIndexOffset: 900 }).addTo(map);
+                    if (convPrice) {
+                        convMarker.bindTooltip(convPrice, {
+                            permanent: true,
+                            direction: 'top',
+                            offset: L.point(0, -30),
+                            className: 'price-bubble-conv'
+                        }).openTooltip();
+                    }
+                    combinedBounds.extend(L.latLng(convLat, convLng));
+                }
+
+                map.fitBounds(combinedBounds, { padding: L.point(40, 40) });
 
                 if (showRoute) {
-                    var valhallaUrl = 'https://valhalla1.openstreetmap.de/route?json=' +
+                    var valhallaUrl = 'https://openstreetmap.de' +
                         encodeURIComponent(JSON.stringify({
                             locations: new Array(
                                 { lat: lat, lon: lng },
@@ -190,7 +260,7 @@
                             longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
                             lat += latitude_change;
                             lng += longitude_change;
-                            coordinates.push(L.latLng(lat / factor, lng / factor));
+                            coordinates.push(new Array(lat / factor, lng / factor));
                         }
                         return coordinates;
                     }
@@ -198,27 +268,27 @@
                     fetch(valhallaUrl)
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
-                            if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                                var leg = data.trip.legs[0];
-                                var routeCoords = decodePolyline6(leg.shape);
-                                var routeLine = L.polyline(routeCoords, {
+                            if (data && data.trip && data.trip.legs && data.trip.legs.length > 0) {
+                                var shape = data.trip.legs.at(0).shape;
+                                var coords = decodePolyline6(shape);
+                                var routeLine = L.polyline(coords, {
                                     color: routeColor,
-                                    weight: 6,
+                                    weight: 5,
                                     opacity: 0.85
                                 }).addTo(map);
+                                map.fitBounds(routeLine.getBounds().extend(L.latLng(lat, lng)), { padding: L.point(40, 40) });
 
-                                var km = data.trip.summary.length.toFixed(1).replace('.', ',');
-                                var min = Math.max(1, Math.round(data.trip.summary.time / 60));
-                                var banner = document.getElementById('route-banner');
-                                banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
-                                banner.style.display = 'block';
-
-                                map.fitBounds(routeLine.getBounds());
+                                var summary = data.trip.summary;
+                                if (summary) {
+                                    var km = summary.length.toFixed(1);
+                                    var min = Math.max(1, Math.round(summary.time / 60));
+                                    var banner = document.getElementById('route-banner');
+                                    banner.innerText = km + ' km • ' + min + ' min';
+                                    banner.style.display = 'block';
+                                }
                             }
                         })
-                        .catch(function(err) {
-                            console.error('Errore Valhalla:', err);
-                        });
+                        .catch(function(err) { console.error('Valhalla error:', err); });
                 }
             }
         };
