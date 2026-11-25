@@ -206,7 +206,7 @@
                 });
             }
 
-                       if (!hasDest) {
+            if (!hasDest) {
                 map.fitBounds(searchCircle.getBounds());
             } else {
                 var combinedBounds = searchCircle.getBounds().extend(L.latLng(destLat, destLng));
@@ -305,22 +305,9 @@
                     });
                 }
 
-                map.fitBounds(combinedBounds);
- 
+                               map.fitBounds(combinedBounds);
 
-
-                if (showRoute) {
-                    var valhallaUrl = 'https://valhalla1.openstreetmap.de/route?json=' +
-                        encodeURIComponent(JSON.stringify({
-                            locations: new Array(
-                                { lat: lat, lon: lng },
-                                { lat: destLat, lon: destLng }
-                            ),
-                            costing: 'auto',
-                            directions_options: { units: 'kilometers' }
-                        }));
-
-                                    function decodePolyline6(str) {
+                function decodePolyline6(str) {
                     var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
                     while (index < str.length) {
                         byte = null; shift = 0; result = 0;
