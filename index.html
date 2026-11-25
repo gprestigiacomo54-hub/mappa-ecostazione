@@ -249,10 +249,11 @@
                         map.removeLayer(activeRouteLine);
                         activeRouteLine = null;
                     }
-                   var valhallaPayload = {
+                   var currentParams = new URLSearchParams(window.location.search);
+var valhallaPayload = {
   locations: [
-    { lat: parseFloat(startLat), lon: parseFloat(startLng) },
-    { lat: parseFloat(endLat), lon: parseFloat(endLng) }
+    { lat: parseFloat(currentParams.get('lat')), lon: parseFloat(currentParams.get('lng')) },
+    { lat: parseFloat(targetLat), lon: parseFloat(targetLng) }
   ],
   costing: "auto",
   directions_options: { units: "kilometers" }
