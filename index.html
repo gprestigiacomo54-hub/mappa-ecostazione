@@ -206,11 +206,68 @@
                 });
             }
 
-            if (!hasDest) {
+                       if (!hasDest) {
                 map.fitBounds(searchCircle.getBounds());
             } else {
+                var combinedBounds = searchCircle.getBounds().extend(L.latLng(destLat, destLng));
+                var activeRouteLat = destLat;
+                var activeRouteLng = destLng;
+                var activeRouteLine = null;
+
+                function inviaSelezioneAFlutter(tipo, sLat, sLng) {
+                    var payload = JSON.stringify({ tipo: tipo, lat: sLat, lng: sLng });
+                    if (window.FlutterChannel && window.FlutterChannel.postMessage) {
+                        window.FlutterChannel.postMessage(payload);
+                    }
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage(payload, '*');
+                    }
+                }
+
+                function calcolaPercorso(targetLat, targetLng) {
+                    if (!showRoute) return;
+                    if (activeRouteLine) {
+                        map.removeLayer(activeRouteLine);
+                        activeRouteLine = null;
+                    }
+                    var valhallaUrl = 'https://openstreetmap.de' +
+                        encodeURIComponent(JSON.stringify({
+                            locations: [
+                                { lat: lat, lon: lng },
+                                { lat: targetLat, lon: targetLng }
+                            ],
+                            costing: 'auto',
+                            directions_options: { units: 'kilometers' }
+                        }));
+
+                    fetch(valhallaUrl)
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
+                                var leg = data.trip.legs[0];
+                                var routeCoords = decodePolyline6(leg.shape);
+                                activeRouteLine = L.polyline(routeCoords, {
+                                    color: routeColor,
+                                    weight: 6,
+                                    opacity: 0.85
+                                }).addTo(map);
+
+                                var km = data.trip.summary.length.toFixed(1).replace('.', ',');
+                                var min = Math.max(1, Math.round(data.trip.summary.time / 60));
+                                var banner = document.getElementById('route-banner');
+                                banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
+                                banner.style.display = 'block';
+
+                                map.fitBounds(activeRouteLine.getBounds());
+                            }
+                        })
+                        .catch(function(err) {
+                            console.error('Errore Valhalla:', err);
+                        });
+                }
+
                 var destMarker = L.marker(L.latLng(destLat, destLng), { icon: destIcon }).addTo(map);
-                                if (destPrice) {
+                if (destPrice) {
                     destMarker.bindTooltip(destPrice, {
                         permanent: true,
                         direction: 'top',
@@ -220,6 +277,13 @@
                 } else {
                     destMarker.bindPopup('<b>' + destName + '</b>').openPopup();
                 }
+
+                destMarker.on('click', function() {
+                    destMarker.setZIndexOffset(1000);
+                    if (typeof convMarker !== 'undefined') convMarker.setZIndexOffset(500);
+                    inviaSelezioneAFlutter('economica', destLat, destLng);
+                    calcolaPercorso(destLat, destLng);
+                });
 
                 if (hasConv) {
                     var convMarker = L.marker(L.latLng(convLat, convLng), { icon: convIcon, zIndexOffset: 900 }).addTo(map);
@@ -232,11 +296,17 @@
                         }).openTooltip();
                     }
                     combinedBounds.extend(L.latLng(convLat, convLng));
+
+                    convMarker.on('click', function() {
+                        convMarker.setZIndexOffset(1000);
+                        destMarker.setZIndexOffset(500);
+                        inviaSelezioneAFlutter('conveniente', convLat, convLng);
+                        calcolaPercorso(convLat, convLng);
+                    });
                 }
 
-
-                var combinedBounds = searchCircle.getBounds().extend(L.latLng(destLat, destLng));
                 map.fitBounds(combinedBounds);
+ 
 
 
                 if (showRoute) {
@@ -250,49 +320,26 @@
                             directions_options: { units: 'kilometers' }
                         }));
 
-                    function decodePolyline6(str) {
-                        var index = 0, lat = 0, lng = 0, coordinates = new Array(), shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
-                        while (index < str.length) {
-                            byte = null; shift = 0; result = 0;
-                            do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
-                            latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                            shift = result = 0;
-                            do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
-                            longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                            lat += latitude_change;
-                            lng += longitude_change;
-                            coordinates.push(L.latLng(lat / factor, lng / factor));
-                        }
-                        return coordinates;
+                                    function decodePolyline6(str) {
+                    var index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, latitude_change, longitude_change, factor = 1e6;
+                    while (index < str.length) {
+                        byte = null; shift = 0; result = 0;
+                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+                        latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                        shift = result = 0;
+                        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+                        longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                        lat += latitude_change;
+                        lng += longitude_change;
+                        coordinates.push(L.latLng(lat / factor, lng / factor));
                     }
-
-                    fetch(valhallaUrl)
-                        .then(function(res) { return res.json(); })
-                        .then(function(data) {
-                            if (data.trip && data.trip.legs && data.trip.legs.length > 0) {
-                                var leg = data.trip.legs[0];
-                                var routeCoords = decodePolyline6(leg.shape);
-                                var routeLine = L.polyline(routeCoords, {
-                                    color: routeColor,
-                                    weight: 6,
-                                    opacity: 0.85
-                                }).addTo(map);
-
-                                var km = data.trip.summary.length.toFixed(1).replace('.', ',');
-                                var min = Math.max(1, Math.round(data.trip.summary.time / 60));
-                                var banner = document.getElementById('route-banner');
-                                banner.innerHTML = '🚗 ' + km + ' km &nbsp;•&nbsp; ' + min + ' min';
-                                banner.style.display = 'block';
-
-                                map.fitBounds(routeLine.getBounds());
-                            }
-                        })
-                        .catch(function(err) {
-                            console.error('Errore Valhalla:', err);
-                        });
+                    return coordinates;
                 }
+
+                calcolaPercorso(activeRouteLat, activeRouteLng);
             }
         };
     </script>
 </body>
 </html>
+
