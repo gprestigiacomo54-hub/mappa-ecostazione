@@ -249,15 +249,7 @@
                         map.removeLayer(activeRouteLine);
                         activeRouteLine = null;
                     }
-                    var valhallaUrl = 'https://openstreetmap.de' +
-                        encodeURIComponent(JSON.stringify({
-                            locations: new Array(
-                                { lat: lat, lon: lng },
-                                { lat: targetLat, lon: targetLng }
-                            ),
-                            costing: 'auto',
-                            directions_options: { units: 'kilometers' }
-                        }));
+                    var valhallaUrl = "https://openstreetmap.de" + encodeURIComponent(JSON.stringify(valhallaRequest));
 
                     fetch(valhallaUrl)
                         .then(function(res) { return res.json(); })
