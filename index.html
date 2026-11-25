@@ -259,7 +259,7 @@ var valhallaPayload = {
   directions_options: { units: "kilometers" }
 };
 
-var valhallaUrl = "https://openstreetmap.de" + encodeURIComponent(JSON.stringify(valhallaPayload));
+var valhallaUrl = "https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(valhallaPayload));
 
                     fetch(valhallaUrl)
                         .then(function(res) { return res.json(); })
