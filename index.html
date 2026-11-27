@@ -123,6 +123,8 @@
             var raggioKm = parseFloat(params.get('raggio')) || 5.0;
             var destLat = parseFloat(params.get('destLat')) || 0;
             var destLng = parseFloat(params.get('destLng')) || 0;
+            var activeRouteLat = parseFloat(params.get('routeLat')) || destLat;
+            var activeRouteLng = parseFloat(params.get('routeLng')) || destLng;
             var destName = params.get('destName') || 'Stazione selezionata';
             var destPrice = params.get('destPrice') || '';
             var convLat = parseFloat(params.get('convLat')) || 0;
